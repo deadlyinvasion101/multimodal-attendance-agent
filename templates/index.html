@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multimodal Attendance & Engagement Agent</title>
+  <!-- Bootstrap 5 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container-fluid px-4 py-3">
+    <!-- Navbar / Header -->
+    <header class="d-flex flex-wrap justify-content-between align-items-center pb-3 mb-4 border-bottom border-secondary border-opacity-25">
+      <div class="d-flex align-items-center gap-3">
+        <div>
+          <h4 class="navbar-brand text-white mb-0">Multimodal Attendance &amp; Engagement Agent</h4>
+          <span class="text-muted small">Computer Vision • Audio Signal Processing • Gemini 2.0 Flash Reasoning</span>
+        </div>
+        <span id="sessionBadge" class="badge bg-secondary ms-2">IDLE</span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button id="toggleSessionBtn" class="btn btn-success fw-bold">▶ Start Session</button>
+        <button id="resetSessionBtn" class="btn btn-outline-secondary">Reset</button>
+      </div>
+    </header>
+
+    <!-- Top KPI Row -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <div class="kpi-card">
+          <div class="d-flex justify-content-between">
+            <span class="kpi-title">Fused Engagement</span>
+            <span id="kpiStatus" class="badge bg-info text-dark">Ready</span>
+          </div>
+          <div id="kpiEngagement" class="kpi-value">0%</div>
+          <small class="text-muted">Multimodal weighted index</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="kpi-card">
+          <span class="kpi-title">Active Attendees</span>
+          <div id="kpiFaces" class="kpi-value text-white">0</div>
+          <small class="text-muted">Real-time detected participants</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="kpi-card">
+          <span class="kpi-title">Head Pose / Gaze Attention</span>
+          <div id="kpiAttention" class="kpi-value" style="color: var(--accent-green);">0%</div>
+          <small class="text-muted">Visual focus estimation</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="kpi-card">
+          <span class="kpi-title">Audio Interaction / VAD</span>
+          <div id="kpiAudio" class="kpi-value" style="color: var(--accent-amber);">0%</div>
+          <small class="text-muted">Voice activity &amp; debate levels</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Panels -->
+    <div class="row g-3">
+      <!-- Left Column: Video & Attendance -->
+      <div class="col-lg-4">
+        <!-- Live Video Viewport -->
+        <div class="panel-card mb-3">
+          <div class="panel-header">
+            <h6 class="panel-title">📹 Video Stream Viewport</h6>
+            <span class="badge bg-dark text-muted">Scenario 1 &amp; 2</span>
+          </div>
+          <div class="panel-body p-2">
+            <video id="webcam" autoplay playsinline muted></video>
+            <canvas id="snapshotCanvas" style="display:none;"></canvas>
+
+            <!-- Video File Upload Alternative (Scenario 1) -->
+            <div class="mt-2 p-2 rounded bg-black bg-opacity-25 border border-secondary border-opacity-25">
+              <label class="form-label text-muted small mb-1">Process Pre-recorded Video:</label>
+              <input type="file" id="videoFileInput" class="form-control form-control-sm bg-dark text-light border-secondary" accept="video/*">
+              <div id="uploadStatusMsg" class="small text-info mt-1"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attendance Table -->
+        <div class="panel-card">
+          <div class="panel-header">
+            <div>
+              <h6 class="panel-title mb-0">📋 Automated Attendance Ledger</h6>
+              <small class="text-muted" style="font-size: 0.72rem;">Sustained presence &gt; 3.0s</small>
+            </div>
+            <a href="/api/export_attendance_csv" class="btn btn-sm btn-outline-info">📥 Export CSV</a>
+          </div>
+          <div class="panel-body p-0">
+            <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+              <table class="table table-custom table-sm mb-0">
+                <thead>
+                  <tr>
+                    <th>Participant</th>
+                    <th>Status</th>
+                    <th>Verified</th>
+                    <th>Duration</th>
+                  </tr>
+                </thead>
+                <tbody id="attendanceTbody">
+                  <tr>
+                    <td colspan="4" class="text-center text-muted py-3">No participants registered yet</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle Column: Real-Time Dynamics Chart (Scenario 2) -->
+      <div class="col-lg-4">
+        <div class="panel-card h-100">
+          <div class="panel-header">
+            <div>
+              <h6 class="panel-title mb-0">📈 Engagement Dynamics Timeline</h6>
+              <small class="text-muted" style="font-size: 0.72rem;">Tracks attention drops, peaks &amp; pacing</small>
+            </div>
+            <span class="badge bg-primary">Real-Time</span>
+          </div>
+          <div class="panel-body" style="height: 520px;">
+            <canvas id="timelineChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: AI Pedagogical Advisor (Scenario 3) -->
+      <div class="col-lg-4">
+        <div class="panel-card h-100">
+          <div class="panel-header">
+            <div>
+              <h6 class="panel-title mb-0">✨ AI Teaching Advisor</h6>
+              <small class="text-muted" style="font-size: 0.72rem;">Powered by Google Gemini 2.0 Flash</small>
+            </div>
+            <button id="fetchAiAdvisorBtn" class="btn btn-sm btn-outline-info">✨ Consult Advisor</button>
+          </div>
+          <div class="panel-body">
+            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+              <span id="advisorSummary" class="small text-light">Classroom dynamic telemetry ready for analysis.</span>
+              <span id="energyLevelBadge" class="badge bg-secondary">Energy: Balanced</span>
+            </div>
+
+            <h6 class="text-muted small text-uppercase mb-2">Context-Aware Interventions:</h6>
+            <div id="suggestionsContainer">
+              <div class="suggestion-item priority-medium">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <strong class="text-info">Pacing</strong>
+                  <span class="badge bg-dark">Standard</span>
+                </div>
+                <p class="mb-0 small text-light">Start a session to receive real-time pedagogical suggestions from Gemini.</p>
+              </div>
+            </div>
+
+            <div class="mt-4 p-3 rounded bg-black bg-opacity-25 border border-secondary border-opacity-25">
+              <strong class="text-white small d-block mb-1">Assistive Decision-Support Mode</strong>
+              <p class="text-muted small mb-0">The agent does not enforce pedagogical actions; it empowers educators with non-intrusive, real-time classroom telemetry and suggestions.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
+
